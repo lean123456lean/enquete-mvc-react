@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { EnqueteController } from "../controllers/EnqueteController";
-
 import {
   Box,
   Button,
@@ -36,6 +35,11 @@ export const EnqueteViews: React.FC = () => {
     setNovaOpcao("");
     setUpdate(update + 1);
   };
+
+  const totalVotos = opcoes.reduce(
+    (sum, opcao) => sum + controller.totalVotos(opcao),
+    0
+  );
 
   return (
     <Box
@@ -100,62 +104,66 @@ export const EnqueteViews: React.FC = () => {
           </Stack>
 
           <Stack spacing={3}>
-            {opcoes.map((opcao) => (
-              <Paper
-                key={opcao}
-                elevation={6}
-                sx={{
-                  p: 3,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderRadius: 3,
-                  bgcolor: "primary.light",
-                  boxShadow:
-                    "0 4px 10px rgba(37, 117, 252, 0.3), 0 2px 5px rgba(106, 17, 203, 0.15)",
-                  transition: "transform 0.2s ease",
-                  "&:hover": {
-                    transform: "scale(1.03)",
-                    boxShadow:
-                      "0 8px 20px rgba(37, 117, 252, 0.5), 0 4px 10px rgba(106, 17, 203, 0.3)",
-                  },
-                }}
-              >
-                <Box>
-                  <Typography variant="h6" fontWeight="600" color="primary.dark">
-                    {opcao}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mt={0.5}>
-                    {controller.totalVotos(opcao)} voto
-                    {controller.totalVotos(opcao) !== 1 ? "s" : ""}
-                  </Typography>
-                </Box>
-
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<HowToVoteIcon />}
-                  onClick={() => votar(opcao)}
+            {opcoes.length === 0 ? (
+              <Typography align="center">Nenhuma opção cadastrada ainda.</Typography>
+            ) : (
+              opcoes.map((opcao) => (
+                <Paper
+                  key={opcao}
+                  elevation={6}
                   sx={{
+                    p: 3,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     borderRadius: 3,
-                    px: 4,
-                    fontWeight: "bold",
-                    textTransform: "none",
+                    bgcolor: "primary.light",
                     boxShadow:
-                      "0 3px 7px rgba(255, 64, 129, 0.5), 0 2px 4px rgba(255, 64, 129, 0.3)",
+                      "0 4px 10px rgba(37, 117, 252, 0.3), 0 2px 5px rgba(106, 17, 203, 0.15)",
+                    transition: "transform 0.2s ease",
                     "&:hover": {
+                      transform: "scale(1.03)",
                       boxShadow:
-                        "0 5px 15px rgba(255, 64, 129, 0.7), 0 3px 8px rgba(255, 64, 129, 0.5)",
-                      backgroundColor: "#ff4081cc",
+                        "0 8px 20px rgba(37, 117, 252, 0.5), 0 4px 10px rgba(106, 17, 203, 0.3)",
                     },
-                    transition: "all 0.3s ease",
                   }}
-                  aria-label={`Votar em ${opcao}`}
                 >
-                  Votar
-                </Button>
-              </Paper>
-            ))}
+                  <Box>
+                    <Typography variant="h6" fontWeight="600" color="primary.dark">
+                      {opcao}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" mt={0.5}>
+                      {controller.totalVotos(opcao)} voto
+                      {controller.totalVotos(opcao) !== 1 ? "s" : ""}
+                    </Typography>
+                  </Box>
+
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<HowToVoteIcon />}
+                    onClick={() => votar(opcao)}
+                    sx={{
+                      borderRadius: 3,
+                      px: 4,
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      boxShadow:
+                        "0 3px 7px rgba(255, 64, 129, 0.5), 0 2px 4px rgba(255, 64, 129, 0.3)",
+                      "&:hover": {
+                        boxShadow:
+                          "0 5px 15px rgba(255, 64, 129, 0.7), 0 3px 8px rgba(255, 64, 129, 0.5)",
+                        backgroundColor: "#ff4081cc",
+                      },
+                      transition: "all 0.3s ease",
+                    }}
+                    aria-label={`Votar em ${opcao}`}
+                  >
+                    Votar
+                  </Button>
+                </Paper>
+              ))
+            )}
           </Stack>
 
           <Typography
@@ -165,8 +173,7 @@ export const EnqueteViews: React.FC = () => {
             fontWeight="bold"
             color="primary.dark"
           >
-            Total de votos:{" "}
-            {opcoes.reduce((sum, opcao) => sum + controller.totalVotos(opcao), 0)}
+            Total de votos: {totalVotos}
           </Typography>
         </Paper>
       </Container>

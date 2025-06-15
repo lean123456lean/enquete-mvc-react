@@ -17,4 +17,14 @@ export class EnqueteModel {
             this.opcoes.push({ id: this.nextId++, texto, votos: 0 });
         }
     }
+
+    votar(id: number) {
+        const opcao = this.opcoes.find(o => o.id === id);
+        if (opcao) {
+            opcao.votos++;
+        }
+    }
+    totalVotos() {
+        return this.opcoes.reduce((acc, o) => acc + o.votos, 0);
+    }
 }

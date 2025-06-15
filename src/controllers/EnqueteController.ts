@@ -1,6 +1,9 @@
 import { Enquete } from "../models/Enquete";
 
 export class EnqueteController {
+  votarPorId(id: number) {
+    throw new Error("Method not implemented.");
+  }
   private enquete: Enquete;
 
   constructor() {
