@@ -1,28 +1,49 @@
-import { Enquete } from "../models/Enquete";
+import api from "../services/api";
+
+// Aqui definimos as interfaces de tipos de dados
+export interface Enquete {
+  id: number;
+  pergunta: string;
+  criadaEm: string; // Ajuste conforme seu backend
+}
+
+export interface Opcao {
+  id: number;
+  texto: string;
+  votos: number;
+  enqueteId: number;
+}
 
 export class EnqueteController {
-  votarPorId(id: number) {
-    throw new Error("Method not implemented.");
-  }
-  private enquete: Enquete;
-
-  constructor() {
-    this.enquete = new Enquete();
+  async criarEnquete(
+    pergunta: string,
+  ): Promise<{ id: number; pergunta: string; criadaEm: string }> {
+    const response = await api.post<Enquete>("/criar", { pergunta });
+    return response.data;
   }
 
-  adicionarOpcao(opcao: string): void {
-    this.enquete.addOpcao(opcao);
+  async adicionarOpcao(enqueteId: number, texto: string): Promise<Opcao> {
+    const response = await api.post<Opcao>("/adicionar-opcao", {
+      enqueteId,
+      texto,
+    });
+    return response.data;
   }
 
-  votar(opcao: string): void {
-    this.enquete.votar(opcao);
+  async votar(opcaoId: number): Promise<{ sucesso: boolean }> {
+    const response = await api.post<{ sucesso: boolean }>("/votar", {
+      opcaoId,
+    });
+    return response.data;
   }
 
-  listarOpcoes(): string[] {
-    return this.enquete.getOpcoes();
+  async listarEnquetes() {
+    const response = await api.get("/listar");
+    return response.data;
   }
 
-  totalVotos(opcao: string): number {
-    return this.enquete.getVotos(opcao);
+  async listarOpcoes(enqueteId: number): Promise<Opcao[]> {
+    const response = await api.get<Opcao[]>(`/opcoes/${enqueteId}`);
+    return response.data;
   }
 }

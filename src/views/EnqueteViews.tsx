@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import { EnqueteController } from "../controllers/EnqueteController";
+import React, { useEffect, useState } from "react";
+import {
+  EnqueteController,
+  type Enquete,
+  type Opcao,
+} from "../controllers/EnqueteController";
 import {
   Box,
   Button,
@@ -12,34 +16,60 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 
-// Controller único fora do componente
+// Controller instanciado
 const controller = new EnqueteController();
-controller.adicionarOpcao("React");
-controller.adicionarOpcao("Vue");
-controller.adicionarOpcao("Angular");
 
 export const EnqueteViews: React.FC = () => {
-  const [update, setUpdate] = useState(0);
+  const [novaPergunta, setNovaPergunta] = useState<string>("");
   const [novaOpcao, setNovaOpcao] = useState<string>("");
-
-  const opcoes = controller.listarOpcoes();
-
-  const votar = (opcao: string) => {
-    controller.votar(opcao);
-    setUpdate(update + 1);
-  };
-
-  const adicionarOpcao = () => {
-    if (novaOpcao.trim() === "") return;
-    controller.adicionarOpcao(novaOpcao.trim());
-    setNovaOpcao("");
-    setUpdate(update + 1);
-  };
-
-  const totalVotos = opcoes.reduce(
-    (sum, opcao) => sum + controller.totalVotos(opcao),
-    0
+  const [enquetes, setEnquetes] = useState<Enquete[]>([]);
+  const [opcoes, setOpcoes] = useState<Opcao[]>([]);
+  const [enqueteSelecionada, setEnqueteSelecionada] = useState<number | null>(
+    null,
   );
+
+  // Carrega as enquetes ao abrir a página
+  useEffect(() => {
+    carregarEnquetes();
+  }, []);
+
+  const carregarEnquetes = async () => {
+    const data = await controller.listarEnquetes();
+    console.log("Enquetes carregadas: ", data);
+    setEnquetes(data);
+    console.log("State atualizado:", data);
+  };
+
+  const carregarOpcoes = async (enqueteId: number) => {
+    const data = await controller.listarOpcoes(enqueteId);
+    setOpcoes(data);
+    setEnqueteSelecionada(enqueteId);
+  };
+
+  const criarEnquete = async () => {
+    if (novaPergunta.trim() === "") return;
+    console.log("Enquete criada com a pergunta:", novaPergunta);
+    console.log("Chamando criarEnquete...");
+    await controller.criarEnquete(novaPergunta);
+    setNovaPergunta("");
+    await carregarEnquetes();
+  };
+
+  const adicionarOpcao = async () => {
+    if (!enqueteSelecionada || novaOpcao.trim() === "") return;
+    await controller.adicionarOpcao(enqueteSelecionada, novaOpcao);
+    setNovaOpcao("");
+    await carregarOpcoes(enqueteSelecionada);
+  };
+
+  const votar = async (opcaoId: number) => {
+    await controller.votar(opcaoId);
+    if (enqueteSelecionada) {
+      await carregarOpcoes(enqueteSelecionada);
+    }
+  };
+
+  const totalVotos = opcoes.reduce((sum, opcao) => sum + opcao.votos, 0);
 
   return (
     <Box
@@ -69,112 +99,118 @@ export const EnqueteViews: React.FC = () => {
             gutterBottom
             color="primary.dark"
           >
-            Sistema de Enquete
+            Crie sua enquete
           </Typography>
 
-          <Stack direction="row" spacing={1} mb={4}>
+          <Stack direction="row" spacing={1} mb={2}>
             <TextField
               fullWidth
-              variant="outlined"
-              placeholder="Digite uma nova opção"
-              value={novaOpcao}
-              onChange={(e) => setNovaOpcao(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && adicionarOpcao()}
+              placeholder="Nova pergunta"
+              value={novaPergunta}
+              onChange={(e) => setNovaPergunta(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && criarEnquete()}
               size="medium"
-              sx={{
-                bgcolor: "#f0f4ff",
-                borderRadius: 2,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                },
-              }}
+              sx={{ bgcolor: "#f0f4ff", borderRadius: 2 }}
             />
-            <Button
-              variant="contained"
-              color="success"
-              onClick={adicionarOpcao}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-              }}
-              aria-label="Adicionar opção"
-            >
-              <AddIcon fontSize="large" />
+            <Button variant="contained" color="success" onClick={criarEnquete}>
+              <AddIcon />
             </Button>
           </Stack>
 
-          <Stack spacing={3}>
-            {opcoes.length === 0 ? (
-              <Typography align="center">Nenhuma opção cadastrada ainda.</Typography>
-            ) : (
-              opcoes.map((opcao) => (
-                <Paper
-                  key={opcao}
-                  elevation={6}
-                  sx={{
-                    p: 3,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderRadius: 3,
-                    bgcolor: "primary.light",
-                    boxShadow:
-                      "0 4px 10px rgba(37, 117, 252, 0.3), 0 2px 5px rgba(106, 17, 203, 0.15)",
-                    transition: "transform 0.2s ease",
-                    "&:hover": {
-                      transform: "scale(1.03)",
-                      boxShadow:
-                        "0 8px 20px rgba(37, 117, 252, 0.5), 0 4px 10px rgba(106, 17, 203, 0.3)",
-                    },
-                  }}
-                >
-                  <Box>
-                    <Typography variant="h6" fontWeight="600" color="primary.dark">
-                      {opcao}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" mt={0.5}>
-                      {controller.totalVotos(opcao)} voto
-                      {controller.totalVotos(opcao) !== 1 ? "s" : ""}
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<HowToVoteIcon />}
-                    onClick={() => votar(opcao)}
-                    sx={{
-                      borderRadius: 3,
-                      px: 4,
-                      fontWeight: "bold",
-                      textTransform: "none",
-                      boxShadow:
-                        "0 3px 7px rgba(255, 64, 129, 0.5), 0 2px 4px rgba(255, 64, 129, 0.3)",
-                      "&:hover": {
-                        boxShadow:
-                          "0 5px 15px rgba(255, 64, 129, 0.7), 0 3px 8px rgba(255, 64, 129, 0.5)",
-                        backgroundColor: "#ff4081cc",
-                      },
-                      transition: "all 0.3s ease",
-                    }}
-                    aria-label={`Votar em ${opcao}`}
-                  >
-                    Votar
-                  </Button>
-                </Paper>
-              ))
-            )}
+          <Stack spacing={1} mb={3}>
+            {enquetes.map((enquete) => (
+              <Button
+                key={enquete.id}
+                variant="outlined"
+                onClick={() => carregarOpcoes(enquete.id)}
+              >
+                {enquete.pergunta}
+              </Button>
+            ))}
           </Stack>
 
-          <Typography
-            variant="h6"
-            align="center"
-            mt={5}
-            fontWeight="bold"
-            color="primary.dark"
-          >
-            Total de votos: {totalVotos}
-          </Typography>
+          {enqueteSelecionada && (
+            <>
+              <Stack direction="row" spacing={1} mb={4}>
+                <TextField
+                  fullWidth
+                  placeholder="Nova opção"
+                  value={novaOpcao}
+                  onChange={(e) => setNovaOpcao(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && adicionarOpcao()}
+                  size="medium"
+                  sx={{ bgcolor: "#f0f4ff", borderRadius: 2 }}
+                />
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={adicionarOpcao}
+                >
+                  <AddIcon />
+                </Button>
+              </Stack>
+
+              <Stack spacing={3}>
+                {opcoes.map((opcao) => (
+                  <Paper
+                    key={opcao.id}
+                    elevation={6}
+                    sx={{
+                      p: 3,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderRadius: 3,
+                      bgcolor: "primary.light",
+                      boxShadow: "0 4px 10px rgba(37, 117, 252, 0.3)",
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        fontWeight="600"
+                        color="primary.dark"
+                      >
+                        {opcao.texto}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        mt={0.5}
+                      >
+                        {opcao.votos} voto{opcao.votos !== 1 ? "s" : ""}
+                      </Typography>
+                    </Box>
+
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<HowToVoteIcon />}
+                      onClick={() => votar(opcao.id)}
+                      sx={{
+                        borderRadius: 3,
+                        px: 4,
+                        fontWeight: "bold",
+                        textTransform: "none",
+                      }}
+                    >
+                      Votar
+                    </Button>
+                  </Paper>
+                ))}
+              </Stack>
+
+              <Typography
+                variant="h6"
+                align="center"
+                mt={5}
+                fontWeight="bold"
+                color="primary.dark"
+              >
+                Total de votos: {totalVotos}
+              </Typography>
+            </>
+          )}
         </Paper>
       </Container>
     </Box>

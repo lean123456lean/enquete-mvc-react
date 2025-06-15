@@ -1,30 +1,63 @@
 export interface Opcao {
-    id: number;
-    texto: string;
-    votos: number;
+  id: number;
+  texto: string;
+  votos: number;
+}
+
+export interface Enquete {
+  id: number;
+  pergunta: string;
+  criadaEm: string;
+  opcoes: Opcao[];
 }
 
 export class EnqueteModel {
-    private opcoes: Opcao[] = [];
-    private nextId: number = 1;
+  private static enquetes: Enquete[] = [];
+  private static nextEnqueteId = 1;
+  private static nextOpcaoId = 1;
 
-    listarOpcoes() {
-        return this.opcoes;
-    }
+  static criarEnquete(pergunta: string): Enquete {
+    const novaEnquete: Enquete = {
+      id: this.nextEnqueteId++,
+      pergunta,
+      criadaEm: new Date().toISOString(),
+      opcoes: [],
+    };
+    this.enquetes.push(novaEnquete);
+    return novaEnquete;
+  }
 
-    adicionarOpcao(texto: string) {
-        if (texto.trim() === "") {
-            this.opcoes.push({ id: this.nextId++, texto, votos: 0 });
-        }
-    }
+  static listarEnquetes(): Enquete[] {
+    return this.enquetes;
+  }
 
-    votar(id: number) {
-        const opcao = this.opcoes.find(o => o.id === id);
-        if (opcao) {
-            opcao.votos++;
-        }
+  static adicionarOpcao(enqueteId: number, texto: string): Opcao | null {
+    const enquete = this.enquetes.find((e) => e.id === enqueteId);
+    if (!enquete) return null;
+
+    const novaOpcao: Opcao = {
+      id: this.nextOpcaoId++,
+      texto,
+      votos: 0,
+    };
+
+    enquete.opcoes.push(novaOpcao);
+    return novaOpcao;
+  }
+
+  static listarOpcoes(enqueteId: number): Opcao[] | null {
+    const enquete = this.enquetes.find((e) => e.id === enqueteId);
+    return enquete ? enquete.opcoes : null;
+  }
+
+  static votar(opcaoId: number): boolean {
+    for (const enquete of this.enquetes) {
+      const opcao = enquete.opcoes.find((o) => o.id === opcaoId);
+      if (opcao) {
+        opcao.votos++;
+        return true;
+      }
     }
-    totalVotos() {
-        return this.opcoes.reduce((acc, o) => acc + o.votos, 0);
-    }
+    return false;
+  }
 }
